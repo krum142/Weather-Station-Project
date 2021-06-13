@@ -1,0 +1,6 @@
+com/example/tangra/BuildConfig.java
+ com.example.tangra.BuildConfig
+com/example/tangra/MainActivity.java
+ com.example.tangra.MainActivity
+ com.example.tangra.MainActivity$1
+ com.example.tangra.MainActivity$UsbPermission
