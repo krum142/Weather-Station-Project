@@ -24,7 +24,7 @@ float diameter = 130; // Anemometer Diameter (set to the value for your cup-to-c
 
 float perimeter = (diameter / 1000) * 3.14159265; // Perimeter in Meters
 
-float afactor = 2.5; // External Resistances From Bearing or other... higher number will result in faster speed. lower numbers will result in slower speeds
+float afactor = 4.5; // External Resistances From Bearing or other... higher number will result in faster speed. lower numbers will result in slower speeds defalt = 2.5
 
 float RotationsPerSecond;
 
@@ -72,12 +72,12 @@ void loop() {
 void displaySpeed(float windspeed){
    display.clearDisplay();
   
-  display.setTextSize(1);      // Normal 1:1 pixel scale
+  display.setTextSize(2);      // Normal 1:1 pixel scale
   display.setTextColor(SSD1306_WHITE); // Draw white text
-  display.setCursor(0, 0);
+  display.setCursor(20, 15);
   
-  
-  display.println(windspeed);
+  display.print(windspeed);
+  display.println(" M/s");
   display.display();
 
   display.clearDisplay();
