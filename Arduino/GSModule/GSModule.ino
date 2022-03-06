@@ -19,6 +19,7 @@ const int lightResistor = A0;
 const int lightResistor2 = A1;
 const int Led1 = 14;
 String led1value = "";
+
 void setup() {
   Serial.begin(115200);
   SIM900.begin(9600); // Change this to the baudrate used by SIM900
