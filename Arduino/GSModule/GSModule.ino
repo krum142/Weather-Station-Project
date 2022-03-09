@@ -1,4 +1,9 @@
 #include <SoftwareSerial.h>
+#include <Wire.h>
+#include <Adafruit_BMP085.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <DHT_U.h>
 
 const byte rxPin = 0; // Wire this to Tx Pin of SIM900
 const byte txPin = 1; // Wire this to Rx Pin of SIM900
@@ -11,14 +16,20 @@ volatile unsigned long ContactBounceTime;
 float WindSpeed; // Speed m/s
 float diameter = 130; // Anemometer Diameter (set to the value for your cup-to-cup in mm)
 float perimeter = (diameter / 1000) * 3.14159265; // Perimeter in Meters
-float afactor = 4.5; // External Resistances From Bearing or other... higher number will result in faster speed. lower numbers will result in slower speeds defalt = 2.5
+float afactor = 3.5; // External Resistances From Bearing or other... higher number will result in faster speed. lower numbers will result in slower speeds defalt = 2.5
 float RotationsPerSecond;
 const int WindSensorPin = 2;
 
 const int lightResistor = A0;
 const int lightResistor2 = A1;
-const int Led1 = 14;
+const int Led1 = 12;
 String led1value = "";
+
+Adafruit_BMP085 bmp;
+
+#define DHTPIN 5
+#define DHTTYPE DHT11 
+DHT_Unified dht(DHTPIN, DHTTYPE);
 
 void setup() {
   Serial.begin(115200);
@@ -27,14 +38,21 @@ void setup() {
   pinMode(lightResistor, INPUT);
   pinMode(lightResistor2, INPUT);
   pinMode(Led1, OUTPUT);
-  
-  attachInterrupt(digitalPinToInterrupt(WindSensorPin), isr_rotation, FALLING);
+  bmp.begin();
+  dht.begin();
 }
 
 void loop() {
+  sensors_event_t event;
+  dht.temperature().getEvent(&event);
   
-  WindSpeed = getWindSpeed();
-  led1value = readSensorValue();
+  Serial.println(bmp.readSealevelPressure(232));
+  Serial.println(bmp.readTemperature());
+  Serial.println(event.temperature);
+  dht.humidity().getEvent(&event);
+  Serial.println(event.relative_humidity);
+  WindSpeed = readWindSpeed();
+  led1value = readWindDirectionValue();
   Serial.println(led1value + " " + String(WindSpeed));
   sendHttp("ID=" + led1value + "&Name=" + String(WindSpeed));
 //  while (SIM900.available()){
@@ -58,16 +76,16 @@ void sendHttp(String p){
   delay(500);
   SIM900.println("AT+HTTPACTION=0\r");
   delay(500);
-  SIM900.println("AT+TERM\r");
+  SIM900.println("AT+HTTPTERM\r");
   delay(500);
 }
 
-float getWindSpeed(){
+float readWindSpeed(){
   Rotations = 0; // Set Rotations count to 0 ready for calculations
 
-  //sei(); // Enables interrupts
+  attachInterrupt(digitalPinToInterrupt(WindSensorPin), isr_rotation, FALLING);
   delay (10000); // Wait 10 seconds to average
-  //cli(); // Disable interrupts
+  detachInterrupt(digitalPinToInterrupt(WindSensorPin));
 
   // Convert to m/s using the derived formula (see notes)
 
@@ -88,7 +106,7 @@ void isr_rotation () {
 
 }
 
-String readSensorValue(){
+String readWindDirectionValue(){
     digitalWrite(Led1,HIGH);
     delay(10);
     String result = String(analogRead(lightResistor)) + "-" + String(analogRead(lightResistor2));
@@ -96,3 +114,5 @@ String readSensorValue(){
     return result;
     
 }
+
+
