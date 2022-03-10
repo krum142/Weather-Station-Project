@@ -13,6 +13,7 @@ SoftwareSerial SIM900(rxPin, txPin);
 
 volatile unsigned long Rotations;
 volatile unsigned long ContactBounceTime;
+volatile unsigned long LastReadOfWindSpeed;
 float WindSpeed; // Speed m/s
 float diameter = 130; // Anemometer Diameter (set to the value for your cup-to-cup in mm)
 float perimeter = (diameter / 1000) * 3.14159265; // Perimeter in Meters
@@ -31,6 +32,8 @@ Adafruit_BMP085 bmp;
 #define DHTTYPE DHT11 
 DHT_Unified dht(DHTPIN, DHTTYPE);
 
+String Data = "";
+
 void setup() {
   Serial.begin(115200);
   SIM900.begin(9600); // Change this to the baudrate used by SIM900
@@ -40,21 +43,19 @@ void setup() {
   pinMode(Led1, OUTPUT);
   bmp.begin();
   dht.begin();
+  attachInterrupt(digitalPinToInterrupt(WindSensorPin), isr_rotation, FALLING);
 }
 
 void loop() {
-  sensors_event_t event;
-  dht.temperature().getEvent(&event);
   
-  Serial.println(bmp.readSealevelPressure(232));
-  Serial.println(bmp.readTemperature());
-  Serial.println(event.temperature);
-  dht.humidity().getEvent(&event);
-  Serial.println(event.relative_humidity);
-  WindSpeed = readWindSpeed();
-  led1value = readWindDirectionValue();
-  Serial.println(led1value + " " + String(WindSpeed));
-  sendHttp("ID=" + led1value + "&Name=" + String(WindSpeed));
+
+
+  delay(1510);
+
+  readWindSpeed();
+  Data = "WDirection=" + readWindDirectionValue() + ", WSpeed=" + String(WindSpeed) + ", " + readTempHumiditySensor() + ", " + readTempPressureSensor(5);
+  Serial.println(Data);
+  //sendHttp("ID=" + led1value + "&Name=" + String(WindSpeed));
 //  while (SIM900.available()){
 //     String inData = SIM900.readString();
 //     Serial.println("Got reponse from SIM900: " + inData);
@@ -80,39 +81,49 @@ void sendHttp(String p){
   delay(500);
 }
 
-float readWindSpeed(){
-  Rotations = 0; // Set Rotations count to 0 ready for calculations
-
-  attachInterrupt(digitalPinToInterrupt(WindSensorPin), isr_rotation, FALLING);
-  delay (10000); // Wait 10 seconds to average
-  detachInterrupt(digitalPinToInterrupt(WindSensorPin));
-
-  // Convert to m/s using the derived formula (see notes)
-
-  RotationsPerSecond = (Rotations / 10.0);
-  //WindSpeed = ((RotationsPerSecond) * perimeter * afactor);
-  return ((RotationsPerSecond) * perimeter * afactor);
+void readWindSpeed(){
+  if( (millis() - LastReadOfWindSpeed) >= 9000 ){
+    float x = (millis() - LastReadOfWindSpeed) / 1000;
+    Serial.println(String(x) + "---" + String(millis() - LastReadOfWindSpeed)  );
+    // Convert to m/s using the derived formula (see notes)
+    RotationsPerSecond = (Rotations / 10.0);
+    WindSpeed = ((RotationsPerSecond) * perimeter * afactor);
+    LastReadOfWindSpeed = millis();
+    Rotations = 0; // Set Rotations count to 0 ready for calculations
+  }
 }
 
 void isr_rotation () {
 
   if ((millis() - ContactBounceTime) > 15 ) { // Debounce the switch contact
-
     Rotations++;
-
     ContactBounceTime = millis();
-
   }
-
 }
 
 String readWindDirectionValue(){
     digitalWrite(Led1,HIGH);
     delay(10);
-    String result = String(analogRead(lightResistor)) + "-" + String(analogRead(lightResistor2));
+    String result = String(analogRead(lightResistor)) + " - " + String(analogRead(lightResistor2));
     digitalWrite(Led1,LOW);
     return result;
     
 }
 
+String readTempHumiditySensor(){
+  sensors_event_t event;
+  String result = "SHumidityAndTemp=";
+  dht.humidity().getEvent(&event);
+  result += String(event.relative_humidity) + ", ";
+  dht.temperature().getEvent(&event);
+  result += String(event.temperature);
+  
+  return result;
+}
 
+String readTempPressureSensor(int height){
+  String result = "SPressureAndTemp=";
+  result += String(bmp.readSealevelPressure(232)) + ", ";
+  result += String(bmp.readTemperature());
+  return result;
+}
