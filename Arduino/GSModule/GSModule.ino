@@ -52,7 +52,7 @@ void loop() {
 
   delay(1510);
 
-  readWindSpeed();
+  readWindSpeed(10000);
   Data = "WDirection=" + readWindDirectionValue() + ", WSpeed=" + String(WindSpeed) + ", " + readTempHumiditySensor() + ", " + readTempPressureSensor(5);
   Serial.println(Data);
   //sendHttp("ID=" + led1value + "&Name=" + String(WindSpeed));
@@ -81,12 +81,12 @@ void sendHttp(String p){
   delay(500);
 }
 
-void readWindSpeed(){
-  if( (millis() - LastReadOfWindSpeed) >= 9000 ){
-    float x = (millis() - LastReadOfWindSpeed) / 1000;
-    Serial.println(String(x) + "---" + String(millis() - LastReadOfWindSpeed)  );
+void readWindSpeed(int timeToRead){
+  if( (millis() - LastReadOfWindSpeed) >= timeToRead ){
+    float passedSeconds = (millis() - LastReadOfWindSpeed) / 1000.0;
+    Serial.println(String(passedSeconds) + "---" + String(millis() - LastReadOfWindSpeed)  );
     // Convert to m/s using the derived formula (see notes)
-    RotationsPerSecond = (Rotations / 10.0);
+    RotationsPerSecond = (Rotations / passedSeconds); //(Rotations / 10.0);
     WindSpeed = ((RotationsPerSecond) * perimeter * afactor);
     LastReadOfWindSpeed = millis();
     Rotations = 0; // Set Rotations count to 0 ready for calculations
@@ -114,7 +114,7 @@ String readTempHumiditySensor(){
   sensors_event_t event;
   String result = "SHumidityAndTemp=";
   dht.humidity().getEvent(&event);
-  result += String(event.relative_humidity) + ", ";
+  result += String(event.relative_humidity) + " - ";
   dht.temperature().getEvent(&event);
   result += String(event.temperature);
   
@@ -123,7 +123,7 @@ String readTempHumiditySensor(){
 
 String readTempPressureSensor(int height){
   String result = "SPressureAndTemp=";
-  result += String(bmp.readSealevelPressure(232)) + ", ";
+  result += String(bmp.readSealevelPressure(232)) + " - ";
   result += String(bmp.readTemperature());
   return result;
 }
