@@ -1,15 +1,8 @@
-//#include <SoftwareSerial.h>
 #include <Wire.h>
 #include <Adafruit_BMP085.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 #include <DHT_U.h>
-
-const byte rxPin = 0; // Wire this to Tx Pin of SIM900
-const byte txPin = 1; // Wire this to Rx Pin of SIM900
-
-// We'll use a software serial interface to connect to SIM900
-//SoftwareSerial SIM900(rxPin, txPin);
 
 volatile unsigned long rotations;
 volatile unsigned long contactBounceTime;
@@ -36,7 +29,6 @@ String data = "";
 
 void setup() {
   Serial.begin(9600);
- // SIM900.begin(9600); // Change this to the baudrate used by SIM900
   pinMode(WindSensorPin, INPUT);
   pinMode(lightResistor, INPUT);
   pinMode(lightResistor2, INPUT);
@@ -51,7 +43,9 @@ void loop() {
   delay(10000);
   
   readWindSpeed(readWindSpeedTime); //time to read wind Speed in ms 
-  data = "{\"WindDirection\":\"" + readWindDirectionValue() + "\", \"WindSpeed\":\"" + String(windSpeed) + "\", " + readTempHumiditySensor() + ", " + readTempPressureSensor(5) + "}";
+  data = "{\"Id\":\"0\", \"WindDirection\":\"" + readWindDirectionValue() + // dont forget id
+   "\", \"WindSpeed\":\"" + String(windSpeed) +
+   "\", " + readTempHumiditySensor() + ", " + readTempPressureSensor(5) + "}";
 
   
   sendHttp(data);
@@ -66,7 +60,7 @@ void sendHttp(String p){
   delay(500);
   Serial.println("AT+HTTPINIT\r");
   delay(500);
-  Serial.println("AT+HTTPPARA=\"URL\",\"http://{IP}:100/Send\"\r");
+  Serial.println("AT+HTTPPARA=\"URL\",\"http://{IP}:100/Send\"\r"); // dont forget to add ip
   delay(500);
   Serial.println("AT+HTTPPARA=\"CONTENT\",\"application/json\"\r");
   delay(500);
@@ -103,7 +97,9 @@ void sendHttp(String p){
 void readWindSpeed(int timeToRead){
   if( (millis() - lastReadOfWindSpeed) >= timeToRead ){
     float passedSeconds = (millis() - lastReadOfWindSpeed) / 1000.0;
-    //Serial.println(String(passedSeconds) + "---" + String(millis() - lastReadOfWindSpeed)  );
+
+    //Serial.println(String(passedSeconds) + "---" + String(millis() - lastReadOfWindSpeed)  ); // for debug
+
     // Convert to m/s using the derived formula (see notes)
     rotationsPerSecond = (rotations / passedSeconds); //(Rotations / 10.0) Angular Velocity;
     windSpeed = ((rotationsPerSecond) * perimeter * afactor);
