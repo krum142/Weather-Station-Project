@@ -1,0 +1,15 @@
+﻿@model List<WeatherStation.Entities.WeatherData>
+@{
+    ViewData["Title"] = "Index";
+}
+@foreach (var item in Model)
+{
+    <p>Recorded On: @item.CreatedOn</p>
+    <p>Wind Direction: @item.WindDirection</p>
+    <p>Wind Speed: @item.WindSpeed</p>
+    <p>Humidity: @item.Humidity</p>
+    <p>Pressure: @item.Pressure</p>
+    <p>TemperatureS1: @item.TemperatureS1</p>
+    <p>TemperatureS2: @item.TemperatureS2</p>
+    <p>----------------------------------</p>
+}

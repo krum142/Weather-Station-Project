@@ -55,7 +55,7 @@ obj/
 *.user
 *.pubxml
 .config/dotnet-tools.json
-
+**/appsettings.json
 #Android Studio
 
 *.iml

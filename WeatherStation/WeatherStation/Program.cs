@@ -1,11 +1,15 @@
+using WeatherStation.Entities;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
-builder.Services.AddControllers();
+Config.ConnectionString = builder.Configuration.GetConnectionString("SqlConnection");
+Config.ReceiveWeatherDataKey = int.Parse(builder.Configuration["ReceiveWeatherDataKey"]);
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
